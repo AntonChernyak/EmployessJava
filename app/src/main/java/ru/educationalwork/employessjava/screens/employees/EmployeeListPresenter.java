@@ -1,44 +1,27 @@
-package ru.educationalwork.employessjava;
+package ru.educationalwork.employessjava.screens.employees;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
-import android.os.Bundle;
 import android.widget.Toast;
 
-import java.util.ArrayList;
-
 import io.reactivex.android.schedulers.AndroidSchedulers;
-
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
-import ru.educationalwork.employessjava.adapters.EmployeeAdapter;
 import ru.educationalwork.employessjava.api.ApiFactory;
 import ru.educationalwork.employessjava.api.ApiService;
-import ru.educationalwork.employessjava.pojo.Employee;
 import ru.educationalwork.employessjava.pojo.EmployeeResponse;
 
-public class MainActivity extends AppCompatActivity {
+public class EmployeeListPresenter {
 
-    private RecyclerView recyclerViewEmployees;
-    private EmployeeAdapter adapter;
     private Disposable disposable; // Чтобы принудительно закрыть api service при закрытии приложения. Чтобы не было утечки памяти
     private CompositeDisposable compositeDisposable; // Если disposable объектов будет много, то их проще добавить в такую группу
+    private EmployeesListView view; // интерфейс от нашей активити
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+    public EmployeeListPresenter(EmployeesListView view) {
+        this.view = view;
+    }
 
-        recyclerViewEmployees = findViewById(R.id.recyclerViewEmployees);
-        adapter = new EmployeeAdapter();
-        adapter.setEmployees(new ArrayList<>());
-        recyclerViewEmployees.setLayoutManager(new LinearLayoutManager(this));
-        recyclerViewEmployees.setAdapter(adapter);
-
+    public void loadData() {
         ApiFactory apiFactory = ApiFactory.getInstance();
         ApiService apiService = apiFactory.getApiService();
 
@@ -50,25 +33,24 @@ public class MainActivity extends AppCompatActivity {
                     // успешная загрузка
                     @Override
                     public void accept(EmployeeResponse employeeResponse) throws Exception {
-                        adapter.setEmployees(employeeResponse.getResponse());
+                        //adapter.setEmployees(employeeResponse.getResponse());
+                        view.showData(employeeResponse.getResponse());
                     }
                 }, new Consumer<Throwable>() {
                     // произошла ошибка
                     @Override
                     public void accept(Throwable throwable) throws Exception {
-                        Toast.makeText(MainActivity.this, "Ошибка получения данных: " + throwable.getMessage(), Toast.LENGTH_SHORT).show();
+                        //Toast.makeText(EmployeeListActivity.this, "Ошибка получения данных: " + throwable.getMessage(), Toast.LENGTH_SHORT).show();
+                        view.showError(throwable);
                     }
                 });
 
         compositeDisposable.add(disposable);
     }
 
-    @Override
-    protected void onDestroy() {
+    public void disposeDisposable() {
         if (compositeDisposable != null) {
             compositeDisposable.dispose();
         }
-        super.onDestroy();
-
     }
 }

@@ -8,7 +8,7 @@ import ru.educationalwork.employessjava.pojo.EmployeeResponse;
 // Запросы на сайт
 public interface ApiService {
 
-    // Observable из пакета rx, чтобы следить за данными
+    // Observable из пакета io.reactivex, чтобы следить за данными
     @GET("testTask.json") // testTask.json --- конечная точка
     Observable<EmployeeResponse> getEmployees();
 }
