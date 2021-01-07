@@ -11,7 +11,7 @@ public class EmployeeResponse {
     @Expose
     private List<Employee> response = null;
 
-    public List<Employee> getResponse() {
+    public List<Employee> getEmployees() {
         return response;
     }
 

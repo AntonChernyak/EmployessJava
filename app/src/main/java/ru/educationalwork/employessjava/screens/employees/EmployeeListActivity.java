@@ -1,6 +1,9 @@
 package ru.educationalwork.employessjava.screens.employees;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -14,11 +17,11 @@ import ru.educationalwork.employessjava.R;
 import ru.educationalwork.employessjava.adapters.EmployeeAdapter;
 import ru.educationalwork.employessjava.pojo.Employee;
 
-public class EmployeeListActivity extends AppCompatActivity implements EmployeesListView {
+public class EmployeeListActivity extends AppCompatActivity {
 
     private RecyclerView recyclerViewEmployees;
     private EmployeeAdapter adapter;
-    private EmployeeListPresenter presenter;
+    private EmployeeViewModel viewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,27 +34,27 @@ public class EmployeeListActivity extends AppCompatActivity implements Employees
         recyclerViewEmployees.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewEmployees.setAdapter(adapter);
 
-        presenter = new EmployeeListPresenter(this);
-        presenter.loadData();
+        viewModel = ViewModelProviders.of(this).get(EmployeeViewModel.class);
+        // успешная загрузка. Подпишемся на сотрудников
+        viewModel.getEmployees().observe(this, new Observer<List<Employee>>() {
+            // Каждый раз при изменении данных в БД вызывается onChanged
+            @Override
+            public void onChanged(List<Employee> employees) {
+                adapter.setEmployees(employees);
+            }
+        });
+        // неудача. Подпишемся на ошибки
+        viewModel.getErrors().observe(this, new Observer<Throwable>() {
+            @Override
+            public void onChanged(Throwable throwable) {
+                if (throwable != null) { // иначе будет бесконечно обновляться, и приложение зависнет
+                    Toast.makeText(EmployeeListActivity.this, "Error: " + throwable.getMessage(), Toast.LENGTH_SHORT).show();
+                    viewModel.clearErrors();
+                }
+            }
+        });
+
+        viewModel.loadData();
     }
 
-    @Override
-    protected void onDestroy() {
-        presenter.disposeDisposable();
-        super.onDestroy();
-    }
-
-    /**
-     * Далее два метода, которые пойдут в Presenter, т.к. в нём не может быть View. Чтобы не нарушать инкаплуляцию
-     * в presentor передаём не напрямую через ссылку на активити, а через интерфейс.
-     */
-    @Override
-    public void showData(List<Employee> employees){
-        adapter.setEmployees(employees);
-    }
-
-    @Override
-    public void showError(Throwable throwable) {
-        Toast.makeText(this, "Ошибка: " + throwable.getMessage(), Toast.LENGTH_SHORT).show();
-    }
 }
